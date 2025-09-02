@@ -42,7 +42,7 @@ export async function transcribeAudio(audioFilePath) {
         });
 
         console.log('Transcription completed successfully');
-        
+
         // Process the response to match the expected format in our application
         const processedResponse = processTranscriptionResponse(response.data);
         return processedResponse;
@@ -64,7 +64,7 @@ export async function transcribeAudio(audioFilePath) {
 function processTranscriptionResponse(apiResponse) {
     // Extract the full text
     const text = apiResponse.text || '';
-    
+
     // Process words to ensure they have the expected format
     const words = (apiResponse.words || []).map(word => {
         // Only include actual words, not spacing
@@ -73,16 +73,15 @@ function processTranscriptionResponse(apiResponse) {
                 text: word.text,
                 start_time: word.start,
                 end_time: word.end,
-                speaker: word.speaker_id || 'unknown',
-                confidence: 0.95 // Default confidence if not provided
+                speaker: word.speaker_id || 'unknown'
             };
         }
         return null;
     }).filter(Boolean); // Remove null entries
-    
+
     // Group words by speaker and sentence
     const sentences = extractSentences(apiResponse);
-    
+
     return {
         text,
         words,
@@ -98,26 +97,26 @@ function processTranscriptionResponse(apiResponse) {
 function extractSentences(apiResponse) {
     const text = apiResponse.text || '';
     const words = apiResponse.words || [];
-    
+
     // Simple sentence extraction based on punctuation
     const sentenceTexts = text.match(/[^.!?]+[.!?]+/g) || [text];
     const sentences = [];
-    
+
     let currentSentenceWords = [];
     let currentSpeaker = null;
     let sentenceIndex = 0;
-    
+
     // Group words into sentences
     for (const word of words) {
         if (word.type !== 'word') continue;
-        
+
         // Set initial speaker for the sentence
         if (currentSentenceWords.length === 0) {
             currentSpeaker = word.speaker_id || 'unknown';
         }
-        
+
         currentSentenceWords.push(word);
-        
+
         // Check if we've reached the end of a sentence
         const wordWithPunctuation = word.text.match(/[.!?]$/);
         if (wordWithPunctuation) {
@@ -130,13 +129,13 @@ function extractSentences(apiResponse) {
                     speaker: currentSpeaker,
                     words: [...currentSentenceWords]
                 });
-                
+
                 currentSentenceWords = [];
                 sentenceIndex++;
             }
         }
     }
-    
+
     // Add any remaining words as a sentence
     if (currentSentenceWords.length > 0) {
         const sentenceText = currentSentenceWords.map(w => w.text).join('');
@@ -148,6 +147,6 @@ function extractSentences(apiResponse) {
             words: [...currentSentenceWords]
         });
     }
-    
+
     return sentences;
 }

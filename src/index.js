@@ -19,7 +19,7 @@ const app = express();
 
 // Connect to MongoDB
 connectToDatabase().catch(err => {
-  console.error('Failed to connect to MongoDB:', err);
+    console.error('Failed to connect to MongoDB:', err);
 });
 
 // Middleware
@@ -51,13 +51,13 @@ app.get("/result/:id", async (req, res) => {
     try {
         const id = req.params.id;
         console.log(`Fetching result for ID: ${id}`);
-        
+
         const data = await loadResult(id);
         if (!data) {
             console.log(`Result not found for ID: ${id}`);
             return res.status(404).json({ error: "Result not found" });
         }
-        
+
         res.json(data);
     } catch (err) {
         console.error(`Error fetching result:`, err);
