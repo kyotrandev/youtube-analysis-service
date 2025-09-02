@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT}:8080"
+    volumes:
+      - ./data:/app/data
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/youtube-analysis
+    command: npm run dev
+    restart: unless-stopped
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:

@@ -1,0 +1,382 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Analysis Service</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+      }
+      header {
+        background-color: #2c3e50;
+        color: white;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 24px;
+      }
+      .container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        min-width: 300px;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      button:disabled {
+        background-color: #95a5a6;
+        cursor: not-allowed;
+      }
+      .status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 4px;
+        display: none;
+      }
+      .status.processing {
+        display: block;
+        background-color: #f39c12;
+        color: white;
+      }
+      .status.success {
+        display: block;
+        background-color: #27ae60;
+        color: white;
+      }
+      .mock-badge {
+        display: inline-block;
+        background-color: #e67e22;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-left: 10px;
+        vertical-align: middle;
+      }
+      .status.error {
+        display: block;
+        background-color: #e74c3c;
+        color: white;
+      }
+      .result-container {
+        display: none;
+        margin-top: 20px;
+      }
+      .result-container.active {
+        display: block;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 20px;
+      }
+      .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+      .tab.active {
+        border: 1px solid #ddd;
+        border-bottom: 1px solid white;
+        border-radius: 4px 4px 0 0;
+        margin-bottom: -1px;
+        background-color: white;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      pre {
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-radius: 4px;
+        overflow: auto;
+        max-height: 500px;
+      }
+      .screenshot {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255,255,255,.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 10px;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>YouTube Analysis Service</h1>
+    </header>
+    
+    <div class="container">
+      <h2>Analyze YouTube Video</h2>
+      <p>Enter a YouTube URL to analyze its content. The service will capture a screenshot, extract audio, transcribe it, and analyze each sentence for AI probability.</p>
+      
+      <form id="analyzeForm">
+        <input 
+          name="url" 
+          id="urlInput"
+          placeholder="https://www.youtube.com/watch?v=..." 
+          required
+        />
+        <button type="submit" id="submitButton">Analyze</button>
+      </form>
+      
+      <div id="statusMessage" class="status"></div>
+    </div>
+    
+    <div id="resultContainer" class="container result-container">
+      <h2>Analysis Results</h2>
+      
+      <div class="tabs">
+        <div class="tab active" data-tab="summary">Summary</div>
+        <div class="tab" data-tab="screenshot">Screenshot</div>
+        <div class="tab" data-tab="transcript">Transcript</div>
+        <div class="tab" data-tab="raw">Raw JSON</div>
+      </div>
+      
+      <div id="summaryTab" class="tab-content active">
+        <div id="summaryContent"></div>
+      </div>
+      
+      <div id="screenshotTab" class="tab-content">
+        <img id="screenshotImg" class="screenshot" alt="Video Screenshot" />
+      </div>
+      
+      <div id="transcriptTab" class="tab-content">
+        <div id="transcriptContent"></div>
+      </div>
+      
+      <div id="rawTab" class="tab-content">
+        <pre id="rawOutput"></pre>
+      </div>
+    </div>
+    
+    <script>
+      // DOM elements
+      const form = document.getElementById('analyzeForm');
+      const urlInput = document.getElementById('urlInput');
+      const submitButton = document.getElementById('submitButton');
+      const statusMessage = document.getElementById('statusMessage');
+      const resultContainer = document.getElementById('resultContainer');
+      const summaryContent = document.getElementById('summaryContent');
+      const screenshotImg = document.getElementById('screenshotImg');
+      const transcriptContent = document.getElementById('transcriptContent');
+      const rawOutput = document.getElementById('rawOutput');
+      
+      // Tab functionality
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          
+          tab.classList.add('active');
+          document.getElementById(`${tab.dataset.tab}Tab`).classList.add('active');
+        });
+      });
+      
+      // Form submission
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const url = urlInput.value.trim();
+        if (!url) return;
+        
+        // Update UI for processing state
+        submitButton.disabled = true;
+        statusMessage.className = 'status processing';
+        statusMessage.innerHTML = '<div class="loading"></div> Processing your request...';
+        resultContainer.classList.remove('active');
+        
+        try {
+          // Submit analysis request
+          const response = await fetch('/analyze', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({url})
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+          }
+          
+          const { id, status, error } = await response.json();
+          
+          if (error) {
+            throw new Error(error);
+          }
+          
+          // Poll for results
+          let resultData = null;
+          const poll = setInterval(async () => {
+            try {
+              const resultResponse = await fetch(`/result/${id}`);
+              resultData = await resultResponse.json();
+              
+              // Update raw JSON output
+              rawOutput.textContent = JSON.stringify(resultData, null, 2);
+              
+              // Check if processing is complete or has error
+              if (resultData.error) {
+                clearInterval(poll);
+                throw new Error(resultData.error);
+              }
+              
+              // If transcript is available, processing is complete
+              if (resultData.transcript) {
+                clearInterval(poll);
+                displayResults(resultData);
+              }
+            } catch (pollError) {
+              clearInterval(poll);
+              showError(pollError.message);
+            }
+          }, 2000);
+          
+        } catch (error) {
+          showError(error.message);
+        }
+      });
+      
+      function displayResults(data) {
+        // Update status
+        statusMessage.className = 'status success';
+        statusMessage.textContent = 'Analysis completed successfully!';
+        
+        // Show result container
+        resultContainer.classList.add('active');
+        
+        // Update screenshot
+        if (data.screenshot_path) {
+          screenshotImg.src = `/${data.screenshot_path}`;
+        }
+        
+        // Update summary
+        let summaryHTML = `
+          <p><strong>URL:</strong> ${data.url}</p>
+          <p><strong>Analysis ID:</strong> ${data.id}</p>
+          <p><strong>Created:</strong> ${new Date(data.created_at).toLocaleString()}</p>
+        `;
+        
+        // Add mock badge if using mock GPTZero
+        if (data.using_mock_gptzero) {
+          summaryHTML += `
+            <p><strong>GPTZero:</strong> <span class="mock-badge">DEMO MODE</span> 
+            <span style="font-size: 14px; color: #666;">(Using simulated AI probability data)</span></p>
+          `;
+        }
+        
+        summaryContent.innerHTML = summaryHTML;
+        
+        // Update transcript
+        if (data.transcript && data.transcript.sentences) {
+          let transcriptHTML = '<h3>Transcript with AI Probability';
+          
+          // Add mock badge to transcript header if using mock GPTZero
+          if (data.using_mock_gptzero) {
+            transcriptHTML += ' <span class="mock-badge">DEMO MODE</span>';
+          }
+          
+          transcriptHTML += '</h3>';
+          
+          data.transcript.sentences.forEach(sentence => {
+            const aiProbColor = getAIProbabilityColor(sentence.ai_probability);
+            transcriptHTML += `
+              <div style="margin-bottom: 15px;">
+                <p style="margin-bottom: 5px;">
+                  <strong>Speaker ${sentence.speaker}:</strong> ${sentence.text}
+                </p>
+                <p style="margin: 0; font-size: 14px; color: #666;">
+                  <span style="display: inline-block; width: 80px;">Time:</span> ${formatTime(sentence.start_time)} - ${formatTime(sentence.end_time)}
+                </p>
+                <p style="margin: 0; font-size: 14px;">
+                  <span style="display: inline-block; width: 80px;">AI Prob:</span> 
+                  <span style="color: ${aiProbColor}; font-weight: bold;">
+                    ${(sentence.ai_probability * 100).toFixed(1)}%
+                  </span>
+                </p>
+              </div>
+            `;
+          });
+          
+          transcriptContent.innerHTML = transcriptHTML;
+        } else {
+          transcriptContent.innerHTML = '<p>No transcript data available.</p>';
+        }
+        
+        // Re-enable form
+        submitButton.disabled = false;
+      }
+      
+      function showError(message) {
+        statusMessage.className = 'status error';
+        statusMessage.textContent = `Error: ${message}`;
+        submitButton.disabled = false;
+      }
+      
+      function formatTime(seconds) {
+        if (!seconds && seconds !== 0) return '--:--';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+      
+      function getAIProbabilityColor(probability) {
+        if (!probability && probability !== 0) return '#999';
+        
+        if (probability < 0.3) return '#27ae60'; // Low probability - green
+        if (probability < 0.7) return '#f39c12'; // Medium probability - orange
+        return '#e74c3c'; // High probability - red
+      }
+    </script>
+  </body>
+</html>

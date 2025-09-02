@@ -1,0 +1,14 @@
+{
+  "watch": [
+    "src"
+  ],
+  "ignore": [
+    "node_modules",
+    "dist",
+    "logs",
+    ".next",
+    "tmp",
+    "data"
+  ],
+  "ext": "js,ts,json"
+}
