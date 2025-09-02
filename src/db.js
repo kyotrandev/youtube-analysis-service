@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Get MongoDB connection string from environment variables or use default
+// Get MongoDB connection string from environment variables or use default variable from docker-compose
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/youtube-analysis';
 
 // Connect to MongoDB

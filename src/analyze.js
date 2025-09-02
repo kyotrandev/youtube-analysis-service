@@ -3,7 +3,7 @@ import { takeScreenshot } from "./puppeteer.js";
 import { downloadToWav } from "./audio.js";
 import { saveResult } from "./storage.js";
 import { transcribeAudio } from "./elevenlabs.js";
-import { processTranscript } from "./gptzero.js";
+import { processTranscript, isUsingMock } from "./gptzero-wrapper.js";
 import fs from "fs";
 import path from "path";
 
@@ -39,7 +39,7 @@ export async function analyze(url) {
         const transcription = await transcribeAudio(audioPath);
 
         // 4. Process transcript with GPTZero for AI probability
-        console.log(`Analyzing transcript with GPTZero`);
+        console.log(`Analyzing transcript with ${isUsingMock ? 'MOCK ' : ''}GPTZero`);
         const enhancedTranscript = await processTranscript(transcription);
 
         // 5. Save transcript to file
@@ -53,9 +53,10 @@ export async function analyze(url) {
             audio_path: audioPath,
             transcript_path: transcriptPath,
             transcript: enhancedTranscript,
+            using_mock_gptzero: isUsingMock,
             created_at: new Date().toISOString()
         };
-        saveResult(id, result);
+        await saveResult(id, result);
 
         return id;
     } catch (error) {
@@ -78,7 +79,7 @@ export async function analyze(url) {
             result.audio_path = audioPath;
         }
 
-        saveResult(id, result);
+        await saveResult(id, result);
         throw error;
     }
 }

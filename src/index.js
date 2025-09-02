@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { analyze } from "./analyze.js";
 import { loadResult } from "./storage.js";
+import { connectToDatabase } from "./db.js";
 import dotenv from "dotenv";
 
 // Load environment variables
@@ -15,6 +16,11 @@ const __dirname = path.dirname(__filename);
 
 // Initialize Express app
 const app = express();
+
+// Connect to MongoDB
+connectToDatabase().catch(err => {
+  console.error('Failed to connect to MongoDB:', err);
+});
 
 // Middleware
 app.use(bodyParser.json());
@@ -41,12 +47,12 @@ app.post("/analyze", async (req, res) => {
     }
 });
 
-app.get("/result/:id", (req, res) => {
+app.get("/result/:id", async (req, res) => {
     try {
         const id = req.params.id;
         console.log(`Fetching result for ID: ${id}`);
         
-        const data = loadResult(id);
+        const data = await loadResult(id);
         if (!data) {
             console.log(`Result not found for ID: ${id}`);
             return res.status(404).json({ error: "Result not found" });

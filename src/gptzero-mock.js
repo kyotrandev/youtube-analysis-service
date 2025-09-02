@@ -11,45 +11,45 @@
 function generateMockAIProbability(text) {
     // For demo purposes, we'll generate a somewhat realistic-looking probability
     // based on the text characteristics
-    
+
     // Simple heuristics for demonstration:
     // 1. Longer texts tend to have more varied AI probability
     // 2. Texts with certain keywords might have higher AI probability
     // 3. Add some randomness to make it look realistic
-    
+
     // Base probability (low)
     let baseProbability = 0.05 + (Math.random() * 0.1);
-    
+
     // Text length factor (longer texts might have slightly higher probability)
     const lengthFactor = Math.min(text.length / 1000, 0.2);
-    
+
     // Keyword factor
     const aiKeywords = [
         'algorithm', 'neural', 'network', 'intelligence', 'artificial',
         'model', 'trained', 'generate', 'language', 'processing',
         'data', 'analysis', 'prediction', 'machine', 'learning'
     ];
-    
+
     let keywordMatches = 0;
     const lowercaseText = text.toLowerCase();
-    
+
     aiKeywords.forEach(keyword => {
         if (lowercaseText.includes(keyword)) {
             keywordMatches++;
         }
     });
-    
+
     const keywordFactor = Math.min(keywordMatches * 0.05, 0.3);
-    
+
     // Calculate final probability
     let probability = baseProbability + lengthFactor + keywordFactor;
-    
+
     // Add some randomness
     probability += (Math.random() * 0.1) - 0.05;
-    
+
     // Ensure probability is between 0 and 1
     probability = Math.max(0, Math.min(probability, 0.95));
-    
+
     return probability;
 }
 
@@ -61,12 +61,12 @@ function generateMockAIProbability(text) {
 export async function analyzeText(text) {
     // Simulate API delay for realism
     await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 700));
-    
+
     console.log(`[MOCK] Analyzing text with GPTZero (${text.length} chars)`);
-    
+
     // Generate mock probability
     const aiProbability = generateMockAIProbability(text);
-    
+
     console.log(`[MOCK] GPTZero analysis complete: AI probability ${aiProbability}`);
     return aiProbability;
 }
@@ -85,12 +85,12 @@ export async function processTranscript(transcript) {
 
     // Use the sentences that were already extracted in the ElevenLabs processing
     const sentences = transcript.sentences || [];
-    
+
     if (sentences.length === 0) {
         console.warn('No sentences found in transcript, cannot analyze AI probability');
         return transcript;
     }
-    
+
     // Process each sentence
     const enhancedSentences = [];
     for (const sentence of sentences) {
