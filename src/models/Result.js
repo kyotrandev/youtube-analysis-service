@@ -37,9 +37,9 @@ const ResultSchema = new mongoose.Schema({
   using_mock_gptzero: Boolean,
   error: String,
   created_at: { type: Date, default: Date.now }
-}, { 
+}, {
   timestamps: true,
-  versionKey: false 
+  versionKey: false
 });
 
 // Create a model from the schema
